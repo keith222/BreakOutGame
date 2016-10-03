@@ -9,73 +9,93 @@
 import SpriteKit
 import GameplayKit
 
-class GameScene: SKScene {
+class GameScene: SKScene, SKPhysicsContactDelegate {
     
-    private var label : SKLabelNode?
-    private var spinnyNode : SKShapeNode?
+    var isFingerOnpaddle = false
+    
+    let BallCategory: UInt32 = 0x1 << 0
+    let BottomCategory: UInt32 = 0x1 << 1
+    let BlockCategory: UInt32 = 0x1 << 2
+    let PaddleCategory: UInt32 = 0x1 << 3
+    let BorderCategory: UInt32 = 0x1 << 4
     
     override func didMove(to view: SKView) {
         
-        // Get label node from scene and store it for use later
-        self.label = self.childNode(withName: "//helloLabel") as? SKLabelNode
-        if let label = self.label {
-            label.alpha = 0.0
-            label.run(SKAction.fadeIn(withDuration: 2.0))
-        }
+        let borderBody = SKPhysicsBody(edgeLoopFrom: self.frame)
+        borderBody.friction = 0
+        self.physicsBody = borderBody
         
-        // Create shape node to use during mouse interaction
-        let w = (self.size.width + self.size.height) * 0.05
-        self.spinnyNode = SKShapeNode.init(rectOf: CGSize.init(width: w, height: w), cornerRadius: w * 0.3)
+        physicsWorld.gravity = CGVector(dx: 0.0, dy: 0.0)
+        physicsWorld.contactDelegate = self
+        let ball = childNode(withName: "ball") as! SKSpriteNode
+        ball.physicsBody!.applyImpulse(CGVector(dx: 100.0, dy: 100.0))
+    
+        let bottomRect = CGRect(x: frame.origin.x, y: frame.origin.y, width: frame.size.width, height: 1)
+        let bottom = SKNode()
+        bottom.physicsBody = SKPhysicsBody(edgeLoopFrom: bottomRect)
+        addChild(bottom)
         
-        if let spinnyNode = self.spinnyNode {
-            spinnyNode.lineWidth = 2.5
-            
-            spinnyNode.run(SKAction.repeatForever(SKAction.rotate(byAngle: CGFloat(M_PI), duration: 1)))
-            spinnyNode.run(SKAction.sequence([SKAction.wait(forDuration: 0.5),
-                                              SKAction.fadeOut(withDuration: 0.5),
-                                              SKAction.removeFromParent()]))
+        let paddle = childNode(withName: "paddle") as! SKSpriteNode
+        
+        bottom.physicsBody!.categoryBitMask = BottomCategory
+        ball.physicsBody!.categoryBitMask = BallCategory
+        paddle.physicsBody!.categoryBitMask = PaddleCategory
+        borderBody.categoryBitMask = BorderCategory
+        ball.physicsBody!.contactTestBitMask = BottomCategory
+        
+    }
+    
+    func didBegin(_ contact: SKPhysicsContact) {
+        var firstBody: SKPhysicsBody
+        var secondBody: SKPhysicsBody
+
+        if contact.bodyA.categoryBitMask < contact.bodyB.categoryBitMask {
+            firstBody = contact.bodyA
+            secondBody = contact.bodyB
+        } else {
+            firstBody = contact.bodyB
+            secondBody = contact.bodyA
+        }
+
+        if firstBody.categoryBitMask == BallCategory && secondBody.categoryBitMask == BottomCategory {
+            print("Hit bottom. First contact has been made.")
         }
     }
     
     
-    func touchDown(atPoint pos : CGPoint) {
-        if let n = self.spinnyNode?.copy() as! SKShapeNode? {
-            n.position = pos
-            n.strokeColor = SKColor.green
-            self.addChild(n)
-        }
-    }
+    func touchDown(atPoint pos : CGPoint) {}
     
-    func touchMoved(toPoint pos : CGPoint) {
-        if let n = self.spinnyNode?.copy() as! SKShapeNode? {
-            n.position = pos
-            n.strokeColor = SKColor.blue
-            self.addChild(n)
-        }
-    }
+    func touchMoved(toPoint pos : CGPoint) {}
     
-    func touchUp(atPoint pos : CGPoint) {
-        if let n = self.spinnyNode?.copy() as! SKShapeNode? {
-            n.position = pos
-            n.strokeColor = SKColor.red
-            self.addChild(n)
-        }
-    }
+    func touchUp(atPoint pos : CGPoint) {}
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        if let label = self.label {
-            label.run(SKAction.init(named: "Pulse")!, withKey: "fadeInOut")
-        }
+        let touch = touches.first
+        let touchLocation = touch?.location(in: self)
         
-        for t in touches { self.touchDown(atPoint: t.location(in: self)) }
+        if let body = physicsWorld.body(at: touchLocation!){
+            if body.node?.name == "paddle"{
+                print("Began touch on paddle")
+                isFingerOnpaddle = true
+            }
+        }
     }
     
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        for t in touches { self.touchMoved(toPoint: t.location(in: self)) }
+        if isFingerOnpaddle{
+            let touch = touches.first
+            let touchLocation = touch?.location(in: self)
+            let previousLocation = touch?.previousLocation(in: self)
+            let paddle = childNode(withName: "paddle") as! SKSpriteNode
+            var paddleX = paddle.position.x + ((touchLocation?.x)! - (previousLocation?.x)!)
+            paddleX = max(paddleX, paddle.size.width/2)
+            paddleX = min(paddleX, size.width - paddle.size.width/2)
+            paddle.position = CGPoint(x: paddleX, y: paddle.position.y)
+        }
     }
     
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        for t in touches { self.touchUp(atPoint: t.location(in: self)) }
+        isFingerOnpaddle = false
     }
     
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
