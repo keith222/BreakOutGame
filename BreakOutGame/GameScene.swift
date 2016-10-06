@@ -21,15 +21,19 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     override func didMove(to view: SKView) {
         
+        //border
         let borderBody = SKPhysicsBody(edgeLoopFrom: self.frame)
         borderBody.friction = 0
         self.physicsBody = borderBody
         
         physicsWorld.gravity = CGVector(dx: 0.0, dy: 0.0)
         physicsWorld.contactDelegate = self
+        
+        //ball
         let ball = childNode(withName: "ball") as! SKSpriteNode
         ball.physicsBody!.applyImpulse(CGVector(dx: 100.0, dy: 100.0))
     
+        //bottom
         let bottomRect = CGRect(x: frame.origin.x, y: frame.origin.y, width: frame.size.width, height: 1)
         let bottom = SKNode()
         bottom.physicsBody = SKPhysicsBody(edgeLoopFrom: bottomRect)
@@ -37,12 +41,22 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         let paddle = childNode(withName: "paddle") as! SKSpriteNode
         
+        //physic categorybitmask
         bottom.physicsBody!.categoryBitMask = BottomCategory
         ball.physicsBody!.categoryBitMask = BallCategory
         paddle.physicsBody!.categoryBitMask = PaddleCategory
         borderBody.categoryBitMask = BorderCategory
         ball.physicsBody!.contactTestBitMask = BottomCategory
         
+        //block
+        let numberOfBlocks = 8
+        let blockWitdh: CGFloat = 20.0
+        let totalBlocksWidth = blockWitdh * CGFloat(numberOfBlocks)
+        
+        let xOffset = (frame.width - totalBlocksWidth) / 2
+        for i in 0..<numberOfBlocks{
+//            let block = SKLabelNode
+        }
     }
     
     func didBegin(_ contact: SKPhysicsContact) {
