@@ -53,8 +53,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         let blockWitdh: CGFloat = 20.0
         let totalBlocksWidth = blockWitdh * CGFloat(numberOfBlocks)
         
-        let xOffset = (frame.width - totalBlocksWidth) / 2
-        for i in 0..<numberOfBlocks{
+        _ = (frame.width - totalBlocksWidth) / 2
+        for _ in 0..<numberOfBlocks{
 //            let block = SKLabelNode
         }
     }
@@ -102,8 +102,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             let previousLocation = touch?.previousLocation(in: self)
             let paddle = childNode(withName: "paddle") as! SKSpriteNode
             var paddleX = paddle.position.x + ((touchLocation?.x)! - (previousLocation?.x)!)
-            paddleX = max(paddleX, paddle.size.width/2)
-            paddleX = min(paddleX, size.width - paddle.size.width/2)
+            paddleX = max(paddleX, -size.width / 2 + paddle.size.width / 2)
+            paddleX = min(paddleX, size.width / 2 - paddle.size.width / 2)
             paddle.position = CGPoint(x: paddleX, y: paddle.position.y)
         }
     }
